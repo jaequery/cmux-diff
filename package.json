@@ -1,0 +1,29 @@
+{
+  "name": "cmux-diff",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "cmux-diff": "src/cli.ts"
+  },
+  "scripts": {
+    "dev": "bun --hot src/index.ts",
+    "start": "bun src/cli.ts",
+    "build": "bun run build.ts",
+    "build:compile": "bun run build-compile.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "shiki": "^4.0.1",
+    "lucide-react": "^0.500.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "bun-plugin-tailwind": "^0.1.1",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.8.0"
+  }
+}
