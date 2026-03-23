@@ -12,7 +12,7 @@ function buildBrowserCommand(
 ): { cmd: string[]; label: string } {
   switch (direction) {
     case "tab":
-      return { cmd: ["cmux", "browser", "open", url], label: "new tab" };
+      return { cmd: ["cmux", "new-surface", "--type", "browser", "--url", url], label: "new tab" };
     case "right":
       return {
         cmd: ["cmux", "new-pane", "--type", "browser", "--direction", "right", "--url", url],
