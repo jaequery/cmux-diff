@@ -26,7 +26,7 @@ interface FileDiffData {
 
 export function useLogMode() {
   const [entries, setEntries] = useState<LogEntry[]>([]);
-  const [selectedCommit, setSelectedCommit] = useState<string | null>(null);
+  const [selectedCommits, setSelectedCommits] = useState<Set<string>>(new Set());
   const [files, setFiles] = useState<ChangedFile[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [activeFile, setActiveFile] = useState<string | null>(null);
@@ -37,6 +37,9 @@ export function useLogMode() {
   const [logCount, setLogCount] = useState(5);
   const [hasMore, setHasMore] = useState(true);
   const lastClickedRef = useRef<string | null>(null);
+  const lastClickedCommitRef = useRef<string | null>(null);
+  // Track current diff range to use in file operations
+  const diffRangeRef = useRef<{ base: string; target: string } | null>(null);
 
   const fetchLog = useCallback(async (count = 5) => {
     try {
@@ -98,24 +101,38 @@ export function useLogMode() {
     []
   );
 
-  const selectCommit = useCallback(
-    async (hash: string) => {
-      setSelectedCommit(hash);
+  // Compute diff range from selected commits (oldest parent to newest)
+  const computeRange = useCallback(
+    (hashes: Set<string>): { base: string; target: string } | null => {
+      if (hashes.size === 0) return null;
+      // Find the indices in entries (entries are newest-first)
+      const indices = Array.from(hashes)
+        .map((h) => entries.findIndex((e) => e.hash === h))
+        .filter((i) => i !== -1)
+        .sort((a, b) => a - b);
+      if (indices.length === 0) return null;
+      const newestIdx = indices[0]; // smallest index = newest
+      const oldestIdx = indices[indices.length - 1]; // largest index = oldest
+      const newest = entries[newestIdx].hash;
+      const oldest = entries[oldestIdx].hash;
+      return { base: `${oldest}~1`, target: newest };
+    },
+    [entries]
+  );
+
+  const loadDiffsForRange = useCallback(
+    async (base: string, target: string) => {
+      diffRangeRef.current = { base, target };
       setFileDiffs(new Map());
       setSelectedFiles(new Set());
       setActiveFile(null);
 
-      const base = `${hash}~1`;
-      const target = hash;
-
       try {
         const data = await apiFetch<{ files: ChangedFile[] }>("/api/diff/files", { base, target });
         setFiles(data.files);
-        // Select all files by default
         const allPaths = data.files.map((f) => f.path);
         setSelectedFiles(new Set(allPaths));
         if (allPaths.length > 0) setActiveFile(allPaths[0]);
-        // Fetch all diffs
         await Promise.all(allPaths.map((p) => fetchFileDiff(p, base, target)));
       } catch {
         setFiles([]);
@@ -124,16 +141,55 @@ export function useLogMode() {
     [fetchFileDiff]
   );
 
+  // Plain click: select only this commit
+  const selectCommit = useCallback(
+    async (hash: string) => {
+      lastClickedCommitRef.current = hash;
+      const newSelected = new Set([hash]);
+      setSelectedCommits(newSelected);
+      const range = computeRange(newSelected);
+      if (range) await loadDiffsForRange(range.base, range.target);
+    },
+    [computeRange, loadDiffsForRange]
+  );
+
+  // Shift+click: select range of commits
+  const selectCommitRange = useCallback(
+    async (hash: string) => {
+      const anchor = lastClickedCommitRef.current;
+      if (!anchor) {
+        await selectCommit(hash);
+        return;
+      }
+      const anchorIdx = entries.findIndex((e) => e.hash === anchor);
+      const targetIdx = entries.findIndex((e) => e.hash === hash);
+      if (anchorIdx === -1 || targetIdx === -1) {
+        await selectCommit(hash);
+        return;
+      }
+      const start = Math.min(anchorIdx, targetIdx);
+      const end = Math.max(anchorIdx, targetIdx);
+      const newSelected = new Set<string>();
+      for (let i = start; i <= end; i++) {
+        newSelected.add(entries[i].hash);
+      }
+      setSelectedCommits(newSelected);
+      const range = computeRange(newSelected);
+      if (range) await loadDiffsForRange(range.base, range.target);
+    },
+    [entries, computeRange, loadDiffsForRange, selectCommit]
+  );
+
   const toggleFile = useCallback(
     (path: string) => {
       lastClickedRef.current = path;
       setSelectedFiles(new Set([path]));
       setActiveFile(path);
-      if (!fileDiffs.has(path) && selectedCommit) {
-        fetchFileDiff(path, `${selectedCommit}~1`, selectedCommit);
+      if (!fileDiffs.has(path) && diffRangeRef.current) {
+        fetchFileDiff(path, diffRangeRef.current.base, diffRangeRef.current.target);
       }
     },
-    [fileDiffs, fetchFileDiff, selectedCommit]
+    [fileDiffs, fetchFileDiff]
   );
 
   const selectRange = useCallback(
@@ -155,45 +211,46 @@ export function useLogMode() {
         const next = new Set(prev);
         for (let i = start; i <= end; i++) {
           next.add(files[i].path);
-          if (!fileDiffs.has(files[i].path) && selectedCommit) {
-            fetchFileDiff(files[i].path, `${selectedCommit}~1`, selectedCommit);
+          if (!fileDiffs.has(files[i].path) && diffRangeRef.current) {
+            fetchFileDiff(files[i].path, diffRangeRef.current.base, diffRangeRef.current.target);
           }
         }
         return next;
       });
       setActiveFile(path);
     },
-    [files, fileDiffs, fetchFileDiff, selectedCommit, toggleFile]
+    [files, fileDiffs, fetchFileDiff, toggleFile]
   );
 
   const navigateFile = useCallback(
     (path: string) => {
       setSelectedFiles(new Set([path]));
       setActiveFile(path);
-      if (!fileDiffs.has(path) && selectedCommit) {
-        fetchFileDiff(path, `${selectedCommit}~1`, selectedCommit);
+      if (!fileDiffs.has(path) && diffRangeRef.current) {
+        fetchFileDiff(path, diffRangeRef.current.base, diffRangeRef.current.target);
       }
     },
-    [fileDiffs, fetchFileDiff, selectedCommit]
+    [fileDiffs, fetchFileDiff]
   );
 
   const selectAll = useCallback(() => {
     const allPaths = files.map((f) => f.path);
     setSelectedFiles(new Set(allPaths));
     setActiveFile(allPaths[0] || null);
-    if (selectedCommit) {
+    if (diffRangeRef.current) {
+      const { base, target } = diffRangeRef.current;
       const unfetched = allPaths.filter((p) => !fileDiffs.has(p));
-      Promise.all(unfetched.map((p) => fetchFileDiff(p, `${selectedCommit}~1`, selectedCommit)));
+      Promise.all(unfetched.map((p) => fetchFileDiff(p, base, target)));
     }
-  }, [files, fileDiffs, fetchFileDiff, selectedCommit]);
+  }, [files, fileDiffs, fetchFileDiff]);
 
   const expandContext = useCallback(
     (filePath: string) => {
-      if (!selectedCommit) return;
+      if (!diffRangeRef.current) return;
       const current = fileDiffs.get(filePath)?.context || 3;
-      fetchFileDiff(filePath, `${selectedCommit}~1`, selectedCommit, current + 20);
+      fetchFileDiff(filePath, diffRangeRef.current.base, diffRangeRef.current.target, current + 20);
     },
-    [fileDiffs, fetchFileDiff, selectedCommit]
+    [fileDiffs, fetchFileDiff]
   );
 
   const isLogMode = new URLSearchParams(window.location.search).get("mode") === "log";
@@ -219,8 +276,9 @@ export function useLogMode() {
 
   return {
     entries,
-    selectedCommit,
+    selectedCommits,
     selectCommit,
+    selectCommitRange,
     files,
     selectedFiles,
     activeFile,

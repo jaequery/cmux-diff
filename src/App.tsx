@@ -115,8 +115,9 @@ function AppContent() {
         {isLogMode ? (
           <LogSidebar
             entries={log.entries}
-            selectedCommit={log.selectedCommit}
+            selectedCommits={log.selectedCommits}
             onSelectCommit={log.selectCommit}
+            onSelectCommitRange={log.selectCommitRange}
             files={state.files}
             selectedFiles={state.selectedFiles}
             activeFile={state.activeFile}
@@ -158,18 +159,30 @@ function AppContent() {
           loading={state.diffLoading}
           noChanges={
             isLogMode
-              ? !state.loading && log.selectedCommit !== null && state.files.length === 0
+              ? !state.loading && log.selectedCommits.size > 0 && state.files.length === 0
               : !state.loading && state.files.length === 0
           }
           onExpandContext={state.expandContext}
           emptyMessage={
-            isLogMode && !log.selectedCommit
+            isLogMode && log.selectedCommits.size === 0
               ? "Select a commit to view changes"
               : undefined
           }
           commitInfo={
-            isLogMode && log.selectedCommit
-              ? log.entries.find((e) => e.hash === log.selectedCommit) || null
+            isLogMode && log.selectedCommits.size > 0
+              ? (() => {
+                  const selected = log.entries.filter((e) => log.selectedCommits.has(e.hash));
+                  if (selected.length === 0) return null;
+                  if (selected.length === 1) return selected[0];
+                  // Multiple commits: show range summary
+                  const newest = selected[0];
+                  const oldest = selected[selected.length - 1];
+                  return {
+                    hash: `${oldest.hash.slice(0, 7)}..${newest.hash.slice(0, 7)}`,
+                    message: selected.map((e) => `• ${e.message}`).join("\n"),
+                    date: `${oldest.date} — ${newest.date}`,
+                  };
+                })()
               : null
           }
         />

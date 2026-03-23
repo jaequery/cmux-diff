@@ -5,8 +5,9 @@ import { FileItem } from "./FileItem";
 
 interface Props {
   entries: LogEntry[];
-  selectedCommit: string | null;
+  selectedCommits: Set<string>;
   onSelectCommit: (hash: string) => void;
+  onSelectCommitRange: (hash: string) => void;
   files: ChangedFile[];
   selectedFiles: Set<string>;
   activeFile: string | null;
@@ -21,8 +22,9 @@ interface Props {
 
 export function LogSidebar({
   entries,
-  selectedCommit,
+  selectedCommits,
   onSelectCommit,
+  onSelectCommitRange,
   files,
   selectedFiles,
   activeFile,
@@ -35,6 +37,7 @@ export function LogSidebar({
   onLoadMore,
 }: Props) {
   const allSelected = files.length > 0 && selectedFiles.size === files.length;
+  const hasSelection = selectedCommits.size > 0;
 
   return (
     <div className="flex flex-col h-full bg-surface-1 border-r border-border-default overflow-hidden">
@@ -50,14 +53,21 @@ export function LogSidebar({
             </span>
           )}
         </div>
-        {branch && (
-          <span
-            className="text-[10px] text-text-tertiary font-mono truncate max-w-[80px]"
-            title={branch}
-          >
-            {branch}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {selectedCommits.size > 1 && (
+            <span className="text-[10px] text-text-tertiary">
+              {selectedCommits.size} selected
+            </span>
+          )}
+          {branch && (
+            <span
+              className="text-[10px] text-text-tertiary font-mono truncate max-w-[80px]"
+              title={branch}
+            >
+              {branch}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Commit list */}
@@ -74,8 +84,12 @@ export function LogSidebar({
                 <CommitItem
                   key={entry.hash}
                   entry={entry}
-                  selected={selectedCommit === entry.hash}
-                  onClick={() => onSelectCommit(entry.hash)}
+                  selected={selectedCommits.has(entry.hash)}
+                  onClick={(e) =>
+                    e.shiftKey
+                      ? onSelectCommitRange(entry.hash)
+                      : onSelectCommit(entry.hash)
+                  }
                 />
               ))}
               {hasMore && onLoadMore && (
@@ -88,8 +102,8 @@ export function LogSidebar({
               )}
             </div>
 
-            {/* Files for selected commit */}
-            {selectedCommit && files.length > 0 && (
+            {/* Files for selected commit(s) */}
+            {hasSelection && files.length > 0 && (
               <div>
                 <div className="flex items-center justify-between px-3 py-2 border-b border-border-default">
                   <div className="flex items-center gap-2">

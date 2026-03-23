@@ -3,7 +3,7 @@ import type { LogEntry } from "../hooks/useLogMode";
 interface Props {
   entry: LogEntry;
   selected: boolean;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent) => void;
 }
 
 export function CommitItem({ entry, selected, onClick }: Props) {
