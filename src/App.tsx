@@ -18,6 +18,7 @@ export function App() {
     diffLoading,
     branch,
     expandContext,
+    refresh,
   } = useDiff();
 
   useWebSocket();
@@ -94,6 +95,7 @@ export function App() {
           onToggleFile={toggleFile}
           onSelectRange={selectRange}
           onSelectAll={selectAll}
+          onCommitted={refresh}
           branch={branch}
           loading={loading}
         />

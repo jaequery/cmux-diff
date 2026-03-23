@@ -256,6 +256,125 @@ export class Git {
     return (await this.run(["rev-parse", "--git-dir"])).trim();
   }
 
+  async stageAll(): Promise<void> {
+    await this.run(["add", "-A"]);
+  }
+
+  async stageFiles(paths: string[]): Promise<void> {
+    await this.run(["add", "--", ...paths]);
+  }
+
+  async commit(message: string): Promise<string> {
+    const output = await this.run(["commit", "-m", message]);
+    const match = output.match(/\[[\w/.-]+ ([a-f0-9]+)\]/);
+    return match?.[1] || "committed";
+  }
+
+  async generateCommitMessage(): Promise<string> {
+    const files = await this.getChangedFiles();
+    if (files.length === 0) return "";
+
+    const diff = await this.getFullDiff();
+
+    // Truncate diff if too large (keep first 8000 chars for LLM context)
+    const truncatedDiff =
+      diff.length > 8000 ? diff.slice(0, 8000) + "\n... (truncated)" : diff;
+
+    const fileList = files
+      .map((f) => {
+        const badge =
+          f.status === "added" || f.status === "untracked"
+            ? "A"
+            : f.status === "deleted"
+              ? "D"
+              : f.status === "renamed"
+                ? "R"
+                : "M";
+        return `${badge} ${f.path}`;
+      })
+      .join("\n");
+
+    const prompt = `Generate a git commit message for the following changes using the Conventional Commits standard (https://www.conventionalcommits.org).
+
+Rules:
+- First line: type(scope): description (max 72 chars, lowercase, imperative mood)
+- Types: feat, fix, refactor, style, docs, test, chore, perf, ci, build
+- Scope is optional, use the most relevant module/area name
+- Add a blank line then a concise body (2-4 bullet points) summarizing the key changes
+- Focus on WHY and WHAT changed, not listing every file
+- Do NOT wrap in markdown code blocks
+
+Changed files:
+${fileList}
+
+Diff:
+${truncatedDiff}`;
+
+    try {
+      // Find claude binary
+      const claudePaths = [
+        `${process.env.HOME}/.local/bin/claude`,
+        "/usr/local/bin/claude",
+        "/Applications/cmux.app/Contents/Resources/bin/claude",
+      ];
+      let claudeBin: string | null = null;
+      for (const p of claudePaths) {
+        if (await Bun.file(p).exists()) {
+          claudeBin = p;
+          break;
+        }
+      }
+      if (!claudeBin) throw new Error("claude not found");
+
+      const proc = Bun.spawn([claudeBin, "-p", prompt], {
+        stdout: "pipe",
+        stderr: "pipe",
+        cwd: this.cwd,
+      });
+      const stdout = await new Response(proc.stdout).text();
+      const exitCode = await proc.exited;
+      if (exitCode === 0 && stdout.trim()) {
+        return stdout.trim();
+      }
+    } catch {
+      // claude CLI not available, fall through to fallback
+    }
+
+    // Fallback: simple heuristic if claude CLI fails
+    return this.generateCommitMessageFallback(files);
+  }
+
+  private generateCommitMessageFallback(files: ChangedFile[]): string {
+    const paths = files.map((f) => f.path);
+    const hasNew = files.some(
+      (f) => f.status === "added" || f.status === "untracked"
+    );
+
+    let type = hasNew ? "feat" : "refactor";
+    const isDocsOnly = paths.every(
+      (p) => p.endsWith(".md") || p.includes("docs/")
+    );
+    const isTestOnly = paths.every(
+      (p) => p.includes("test") || p.includes("spec")
+    );
+    if (isDocsOnly) type = "docs";
+    else if (isTestOnly) type = "test";
+
+    const topDirs = [
+      ...new Set(
+        paths.map((p) => p.split("/")[0]).filter((d) => d && d !== ".")
+      ),
+    ];
+    const scope = topDirs.length === 1 ? `(${topDirs[0]})` : "";
+
+    const desc =
+      files.length === 1
+        ? `update ${paths[0].split("/").pop()}`
+        : `update ${files.length} files`;
+
+    return `${type}${scope}: ${desc}`;
+  }
+
   private parseNameStatus(line: string): ChangedFile | null {
     const parts = line.split("\t");
     if (parts.length < 2) return null;

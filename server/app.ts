@@ -197,6 +197,25 @@ export async function createApp(options: AppOptions) {
         return Response.json(branches, { headers });
       }
 
+      if (pathname === "/api/commit/message") {
+        const message = await git.generateCommitMessage();
+        return Response.json({ message }, { headers });
+      }
+
+      if (pathname === "/api/commit" && req.method === "POST") {
+        const body = (await req.json()) as { message: string };
+        if (!body.message?.trim()) {
+          return Response.json(
+            { error: "commit message required" },
+            { status: 400, headers }
+          );
+        }
+        // Stage all changes first
+        await git.stageAll();
+        const hash = await git.commit(body.message.trim());
+        return Response.json({ hash, ok: true }, { headers });
+      }
+
       return Response.json({ error: "not found" }, { status: 404, headers });
     } catch (e) {
       const message = e instanceof Error ? e.message : "Unknown error";
@@ -209,6 +228,7 @@ export async function createApp(options: AppOptions) {
   const server = Bun.serve({
     port: options.port || 0,
     hostname: "127.0.0.1",
+    idleTimeout: 120,
 
     async fetch(req, server) {
       const url = new URL(req.url);

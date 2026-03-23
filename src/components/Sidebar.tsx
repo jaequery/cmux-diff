@@ -1,5 +1,6 @@
 import type { ChangedFile } from "../hooks/useDiff";
 import { FileItem } from "./FileItem";
+import { CommitSection } from "./CommitSection";
 
 interface Props {
   files: ChangedFile[];
@@ -8,6 +9,7 @@ interface Props {
   onToggleFile: (path: string) => void;
   onSelectRange: (path: string) => void;
   onSelectAll: () => void;
+  onCommitted: () => void;
   branch: string;
   loading: boolean;
 }
@@ -19,6 +21,7 @@ export function Sidebar({
   onToggleFile,
   onSelectRange,
   onSelectAll,
+  onCommitted,
   branch,
   loading,
 }: Props) {
@@ -26,6 +29,9 @@ export function Sidebar({
 
   return (
     <div className="flex flex-col h-full bg-surface-1 border-r border-border-default overflow-hidden">
+      {/* Commit section */}
+      <CommitSection hasChanges={files.length > 0} onCommitted={onCommitted} />
+
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-border-default shrink-0">
         <div className="flex items-center gap-2">

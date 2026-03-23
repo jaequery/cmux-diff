@@ -1,0 +1,113 @@
+import { useState, useCallback } from "react";
+import { apiFetch } from "../lib/api";
+
+interface Props {
+  hasChanges: boolean;
+  onCommitted: () => void;
+}
+
+export function CommitSection({ hasChanges, onCommitted }: Props) {
+  const [message, setMessage] = useState("");
+  const [committing, setCommitting] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const generateMessage = useCallback(async () => {
+    setGenerating(true);
+    setError(null);
+    try {
+      const data = await apiFetch<{ message: string }>("/api/commit/message");
+      if (data.message) {
+        setMessage(data.message);
+      }
+    } catch {
+      setError("Failed to generate message");
+    } finally {
+      setGenerating(false);
+    }
+  }, []);
+
+  const handleCommit = useCallback(async () => {
+    if (!message.trim()) return;
+    setCommitting(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const data = await apiFetch<{ hash: string; ok: boolean }>(
+        "/api/commit",
+        undefined,
+        { method: "POST", body: JSON.stringify({ message: message.trim() }) }
+      );
+      if (data.ok) {
+        setSuccess(`Committed: ${data.hash}`);
+        setMessage("");
+        onCommitted();
+        setTimeout(() => setSuccess(null), 3000);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Commit failed");
+    } finally {
+      setCommitting(false);
+    }
+  }, [message, onCommitted]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        e.preventDefault();
+        handleCommit();
+      }
+    },
+    [handleCommit]
+  );
+
+  if (!hasChanges && !success) return null;
+
+  return (
+    <div className="border-b border-border-default px-3 py-2.5">
+      {/* Generate button */}
+      <button
+        onClick={generateMessage}
+        disabled={generating || !hasChanges}
+        className="w-full mb-2 bg-surface-3 hover:bg-surface-2 border border-border-default hover:border-border-accent/50 disabled:opacity-40 disabled:cursor-not-allowed text-text-primary text-xs font-medium py-1.5 px-2 rounded-sm transition-colors flex items-center justify-center gap-1.5"
+      >
+        <span className="text-sm">{generating ? "\u23F3" : "\u2728"}</span>
+        {generating ? "Analyzing changes..." : "Generate Commit Message"}
+      </button>
+
+      {/* Input */}
+      <textarea
+        value={message}
+        onChange={(e) => {
+          setMessage(e.target.value);
+          setError(null);
+        }}
+        onKeyDown={handleKeyDown}
+        placeholder="Commit message..."
+        rows={message.includes("\n") ? Math.min(message.split("\n").length + 1, 8) : 2}
+        className="w-full bg-surface-2 border border-border-default rounded-sm px-2.5 py-1.5 text-xs text-text-primary placeholder:text-text-tertiary font-mono resize-vertical focus:outline-none focus:border-border-accent"
+      />
+
+      {/* Commit button */}
+      <div className="flex items-center gap-1.5 mt-1.5">
+        <button
+          onClick={handleCommit}
+          disabled={!message.trim() || committing}
+          className="flex-1 bg-border-accent hover:bg-border-accent/80 disabled:opacity-40 disabled:cursor-not-allowed text-surface-0 text-xs font-medium py-1.5 px-2 rounded-sm transition-colors"
+        >
+          {committing ? "Committing..." : "Commit"}
+        </button>
+        <span className="text-[10px] text-text-tertiary">{"\u2318"}Enter</span>
+      </div>
+
+      {/* Feedback */}
+      {error && (
+        <div className="mt-1.5 text-[10px] text-status-deleted">{error}</div>
+      )}
+      {success && (
+        <div className="mt-1.5 text-[10px] text-status-added">{success}</div>
+      )}
+    </div>
+  );
+}

@@ -1,8 +1,7 @@
-const BASE = "";
-
 export async function apiFetch<T>(
   path: string,
-  params?: Record<string, string>
+  params?: Record<string, string>,
+  init?: RequestInit
 ): Promise<T> {
   const url = new URL(path, window.location.origin);
   if (params) {
@@ -10,7 +9,14 @@ export async function apiFetch<T>(
       if (v !== undefined) url.searchParams.set(k, v);
     }
   }
-  const res = await fetch(url.toString());
+  const headers: Record<string, string> = {};
+  if (init?.body) {
+    headers["Content-Type"] = "application/json";
+  }
+  const res = await fetch(url.toString(), {
+    ...init,
+    headers: { ...headers, ...init?.headers },
+  });
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`API ${path} failed: ${res.status} ${body}`);
