@@ -84,7 +84,7 @@ export function CommitSection({ hasChanges, onCommitted, ahead, onPushed }: Prop
   if (!hasChanges && !success && ahead === 0) return null;
 
   return (
-    <div className="border border-border-default rounded-md px-3 py-2.5">
+    <div>
       {/* Commit UI — only when there are uncommitted changes */}
       {hasChanges && (
         <>
