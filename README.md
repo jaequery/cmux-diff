@@ -2,18 +2,8 @@
 
 A VSCode-style Changes panel for the [cmux](https://cmux.dev) terminal environment. See which files changed, click to view syntax-highlighted diffs.
 
-```
-+------------------+--------------------------------+
-| CHANGES      5   | src/components/App.tsx     [M] |
-| main             | @@ -15,7 +15,9 @@              |
-|                  |   existing line                |
-| M  src/App.tsx   | - removed line                 |
-| A  src/api.ts    | + added line                   |
-| M  lib/utils.ts  | + another added                |
-| D  old/file.ts   |                                |
-| M  server/app.ts |                                |
-+------------------+--------------------------------+
-```
+<img width="1512" height="1038" alt="image" src="https://github.com/user-attachments/assets/cf695b8a-8ad0-4035-9034-7af775cb77b4" />
+
 
 ## Features
 
