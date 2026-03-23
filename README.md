@@ -4,127 +4,77 @@ A Cursor / VSCode style Changes panel for the [cmux](https://cmux.dev) terminal 
 
 <img width="1512" height="1038" alt="image" src="https://github.com/user-attachments/assets/cf695b8a-8ad0-4035-9034-7af775cb77b4" />
 
+## Install
+
+```bash
+npm install -g cmux-diff
+cmux-diff
+```
+
+Requires [Bun](https://bun.sh) runtime.
 
 ## Features
 
-- **File sidebar** — see all changed files at a glance with status badges (Added, Modified, Deleted, Renamed, Untracked)
+- **File sidebar** — all changed files with status badges (Added, Modified, Deleted, Renamed, Untracked)
 - **Syntax-highlighted diffs** — powered by Shiki with GitHub Dark theme
-- **Multi-file selection** — Cmd/Ctrl+click to select multiple files, Cmd/Ctrl+A to select all
+- **Multi-file selection** — click to toggle files, shift+click for range select, Cmd+A for all
+- **Expand context** — show more lines above, below, or between hunks
+- **AI commit messages** — click "Generate" to create conventional commit messages using Claude
+- **Commit from UI** — stage and commit directly from the changes panel
 - **Real-time updates** — WebSocket-powered live refresh when files change
 - **Resizable sidebar** — drag to resize, width persisted across sessions
 - **Keyboard navigation** — j/k or arrow keys to move between files
 - **Smart diff range** — auto-detects feature branches and diffs against merge-base
-- **cmux integration** — opens in cmux browser split, auto-shutdown on tab close
-- **Dark theme** — GitHub-dark color palette designed for code review
+- **cmux integration** — opens in cmux browser split
+- **Dark theme** — GitHub-dark color palette
 
-## Installation
-
-### Option 1: Clone & run (requires Bun)
-
-```bash
-git clone https://github.com/jaequery/cmux-diff.git
-cd cmux-diff
-bun install
-```
-
-Run it:
-
-```bash
-# Dev mode (opens in default browser)
-bun run dev
-
-# With cmux (opens in cmux browser split)
-bun run start -- /path/to/your/repo
-```
-
-### Option 2: Standalone binary
-
-```bash
-git clone https://github.com/jaequery/cmux-diff.git
-cd cmux-diff
-bun install
-bun run build:compile
-```
-
-Copy the binary to your PATH:
-
-```bash
-cp bin/cmux-diff ~/.local/bin/
-```
-
-Then run from any git repo:
-
-```bash
-cmux-diff /path/to/repo
-cmux-diff              # uses current directory
-```
-
-### Option 3: Global install via Bun
-
-```bash
-bun install -g ./cmux-diff
-cmux-diff
-```
-
-## Usage
-
-```
-cmux-diff [options] [directory]
-
-Options:
-  -p, --port <port>   Port to listen on (default: random)
-  --dry-run            Don't connect to cmux socket
-  -h, --help           Show this help
-```
-
-### Keyboard shortcuts
+## Keyboard Shortcuts
 
 | Key | Action |
 |-----|--------|
 | `j` / `Arrow Down` | Next file |
 | `k` / `Arrow Up` | Previous file |
 | `Cmd/Ctrl + A` | Select all files |
-| `Cmd/Ctrl + Click` | Toggle file selection |
+| `Shift + Click` | Range select files |
+| `Cmd/Ctrl + Enter` | Commit (when in message input) |
 
-### Multi-file selection
+## Claude Code Integration
 
-- **Click** a file to view its diff
-- **Cmd/Ctrl+click** to add/remove files from selection — diffs are shown stacked
-- **Select all** button or Cmd/Ctrl+A to view all diffs at once
-
-## Claude Code Skill
-
-To use as a Claude Code skill (`/cmux-diff:start`), copy the skill to your project:
+Use as a Claude Code skill by adding to your global skills:
 
 ```bash
-mkdir -p .claude/skills/cmux-diff
-cp /path/to/cmux-diff/skills/start/SKILL.md .claude/skills/cmux-diff/start.md
+mkdir -p ~/.claude/skills/cmux-diff
 ```
 
-Or add to your global Claude Code skills directory.
+Then create `~/.claude/skills/cmux-diff/SKILL.md` — see [skills/start/SKILL.md](skills/start/SKILL.md) for the template.
+
+Invoke with `/cmux-diff` from any project.
 
 ## API
-
-The server exposes these endpoints on localhost:
 
 | Endpoint | Description |
 |----------|-------------|
 | `GET /api/diff/files` | List changed files with status |
-| `GET /api/diff/file?path=` | Get diff for a single file with syntax tokens |
+| `GET /api/diff/file?path=&context=` | Diff for a single file with syntax tokens |
+| `GET /api/commit/message` | AI-generated conventional commit message |
+| `POST /api/commit` | Stage all and commit `{ message }` |
 | `GET /api/status` | Current branch and working directory |
 | `GET /api/branches` | List branches |
-| `WS /ws` | WebSocket for real-time `diff-updated` events |
+| `WS /ws` | Real-time `diff-updated` events |
 
 ## Tech Stack
 
 - **Runtime**: [Bun](https://bun.sh)
 - **Frontend**: React 19, Tailwind CSS v4
-- **Syntax highlighting**: [Shiki](https://shiki.style) with GitHub Dark theme
+- **Syntax highlighting**: [Shiki](https://shiki.style) (GitHub Dark)
+- **Commit messages**: Claude CLI (conventional commits)
 - **cmux integration**: Unix domain socket (JSON-RPC)
 
 ## Development
 
 ```bash
+git clone https://github.com/jaequery/cmux-diff.git
+cd cmux-diff
 bun install
 bun run dev                # Dev server with hot reload
 bun run typecheck          # TypeScript check

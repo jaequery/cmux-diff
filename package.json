@@ -1,6 +1,6 @@
 {
   "name": "cmux-diff",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "bin": {
     "cmux-diff": "src/cli.ts"
@@ -10,7 +10,8 @@
     "start": "bun src/cli.ts",
     "build": "bun run build.ts",
     "build:compile": "bun run build-compile.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "postinstall": "sh scripts/postinstall.sh"
   },
   "dependencies": {
     "react": "^19.0.0",
