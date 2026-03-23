@@ -52,13 +52,13 @@ export function FileItem({ file, selected, active, onClick }: Props) {
     >
       {/* Status badge */}
       <span
-        className={`inline-flex items-center justify-center w-4 h-4 rounded-sm text-[10px] font-bold leading-none shrink-0 ${badge.className}`}
+        className={`inline-flex items-center justify-center w-[18px] h-[18px] rounded-sm text-[11px] font-bold leading-none shrink-0 ${badge.className}`}
       >
         {badge.letter}
       </span>
 
       {/* File path */}
-      <span className="break-all font-mono text-xs">
+      <span className="break-all font-mono text-[13px]">
         {dir && <span className="text-text-tertiary">{dir}/</span>}
         <span>{fileName}</span>
       </span>

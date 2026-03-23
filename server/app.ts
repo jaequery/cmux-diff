@@ -85,7 +85,8 @@ export async function createApp(options: AppOptions) {
     try {
       if (pathname === "/api/status") {
         const branch = await git.getBranch();
-        return Response.json({ branch, cwd: options.cwd }, { headers });
+        const { ahead, behind } = await git.getAheadBehind();
+        return Response.json({ branch, cwd: options.cwd, ahead, behind }, { headers });
       }
 
       if (pathname === "/api/diff/files") {
@@ -223,6 +224,11 @@ export async function createApp(options: AppOptions) {
       if (pathname === "/api/commit/message") {
         const message = await git.generateCommitMessage();
         return Response.json({ message }, { headers });
+      }
+
+      if (pathname === "/api/push" && req.method === "POST") {
+        await git.push();
+        return Response.json({ ok: true }, { headers });
       }
 
       if (pathname === "/api/commit" && req.method === "POST") {

@@ -26,6 +26,7 @@ export function App() {
     loading,
     diffLoading,
     branch,
+    ahead,
     expandContext,
     commitInfo,
     refresh,
@@ -104,6 +105,8 @@ export function App() {
           uncommittedFiles={uncommittedFiles}
           onSwitchToUncommitted={switchToUncommitted}
           onCommitted={refresh}
+          ahead={ahead}
+          onPushed={refresh}
           logEntries={logEntries}
           selectedCommits={selectedCommits}
           onSelectCommit={selectCommit}

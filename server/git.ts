@@ -256,6 +256,30 @@ export class Git {
     return (await this.run(["rev-parse", "--git-dir"])).trim();
   }
 
+  async getAheadBehind(): Promise<{ ahead: number; behind: number }> {
+    try {
+      const branch = await this.getBranch();
+      if (branch === "HEAD") return { ahead: 0, behind: 0 };
+      const output = (
+        await this.run([
+          "rev-list",
+          "--left-right",
+          "--count",
+          `origin/${branch}...${branch}`,
+        ])
+      ).trim();
+      const [behind, ahead] = output.split("\t").map(Number);
+      return { ahead: ahead || 0, behind: behind || 0 };
+    } catch {
+      return { ahead: 0, behind: 0 };
+    }
+  }
+
+  async push(): Promise<string> {
+    const branch = await this.getBranch();
+    return this.run(["push", "origin", branch]);
+  }
+
   async stageAll(): Promise<void> {
     await this.run(["add", "-A"]);
   }

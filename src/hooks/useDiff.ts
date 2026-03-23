@@ -27,6 +27,8 @@ interface FileDiffResponse {
 interface StatusResponse {
   branch: string;
   cwd: string;
+  ahead: number;
+  behind: number;
 }
 
 interface FileDiffData {
@@ -57,6 +59,7 @@ export function useDiff() {
   const [loading, setLoading] = useState(true);
   const [diffLoading, setDiffLoading] = useState(false);
   const [branch, setBranch] = useState("");
+  const [ahead, setAhead] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const initialFetchDone = useRef(false);
   const lastClickedRef = useRef<string | null>(null);
@@ -112,6 +115,7 @@ export function useDiff() {
     try {
       const data = await apiFetch<StatusResponse>("/api/status");
       setBranch(data.branch);
+      setAhead(data.ahead || 0);
     } catch {
       // ignore
     }
@@ -426,6 +430,7 @@ export function useDiff() {
     loading,
     diffLoading,
     branch,
+    ahead,
     error,
     expandContext,
     commitInfo,

@@ -17,6 +17,11 @@ export class FileWatcher {
   async start() {
     // Watch working tree
     try {
+      const { existsSync } = await import("fs");
+      if (!existsSync(this.cwd)) {
+        console.error(`Warning: directory does not exist: ${this.cwd}`);
+        return;
+      }
       const watcher = watch(
         this.cwd,
         { recursive: true },

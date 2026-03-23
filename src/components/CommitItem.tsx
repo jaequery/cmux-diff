@@ -21,14 +21,14 @@ export function CommitItem({ entry, selected, onClick }: Props) {
       `}
     >
       <div className="flex items-center gap-2">
-        <span className="font-mono text-[10px] text-text-tertiary shrink-0">
+        <span className="font-mono text-[11px] text-text-tertiary shrink-0">
           {entry.hash.slice(0, 7)}
         </span>
-        <span className="text-[10px] text-text-tertiary truncate">
+        <span className="text-[11px] text-text-tertiary truncate">
           {entry.date}
         </span>
       </div>
-      <span className="text-xs break-words">{entry.message}</span>
+      <span className="text-[13px] break-words">{entry.message}</span>
     </button>
   );
 }

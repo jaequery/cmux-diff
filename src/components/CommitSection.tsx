@@ -4,12 +4,15 @@ import { apiFetch } from "../lib/api";
 interface Props {
   hasChanges: boolean;
   onCommitted: () => void;
+  ahead: number;
+  onPushed: () => void;
 }
 
-export function CommitSection({ hasChanges, onCommitted }: Props) {
+export function CommitSection({ hasChanges, onCommitted, ahead, onPushed }: Props) {
   const [message, setMessage] = useState("");
   const [committing, setCommitting] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [pushing, setPushing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -52,6 +55,22 @@ export function CommitSection({ hasChanges, onCommitted }: Props) {
     }
   }, [message, onCommitted]);
 
+  const handlePush = useCallback(async () => {
+    setPushing(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await apiFetch<{ ok: boolean }>("/api/push", undefined, { method: "POST" });
+      setSuccess("Pushed!");
+      onPushed();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Push failed");
+    } finally {
+      setPushing(false);
+    }
+  }, [onPushed]);
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
@@ -62,7 +81,7 @@ export function CommitSection({ hasChanges, onCommitted }: Props) {
     [handleCommit]
   );
 
-  if (!hasChanges && !success) return null;
+  if (!hasChanges && !success && ahead === 0) return null;
 
   return (
     <div className="border-b border-border-default px-3 py-2.5">
@@ -100,6 +119,17 @@ export function CommitSection({ hasChanges, onCommitted }: Props) {
         </button>
         <span className="text-[10px] text-text-tertiary">{"\u2318"}Enter</span>
       </div>
+
+      {/* Push button */}
+      {ahead > 0 && (
+        <button
+          onClick={handlePush}
+          disabled={pushing}
+          className="w-full mt-1.5 bg-surface-3 hover:bg-surface-2 border border-border-default hover:border-border-accent/50 disabled:opacity-40 disabled:cursor-not-allowed text-text-primary text-xs font-medium py-1.5 px-2 rounded-sm transition-colors flex items-center justify-center gap-1.5"
+        >
+          {pushing ? "Pushing..." : `Push (${ahead} commit${ahead === 1 ? "" : "s"} ahead)`}
+        </button>
+      )}
 
       {/* Feedback */}
       {error && (

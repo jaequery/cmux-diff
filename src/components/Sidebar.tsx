@@ -10,6 +10,8 @@ interface Props {
   uncommittedFiles: ChangedFile[];
   onSwitchToUncommitted: () => void;
   onCommitted: () => void;
+  ahead: number;
+  onPushed: () => void;
   // Log
   logEntries: LogEntry[];
   selectedCommits: Set<string>;
@@ -35,6 +37,8 @@ export function Sidebar({
   uncommittedFiles,
   onSwitchToUncommitted,
   onCommitted,
+  ahead,
+  onPushed,
   logEntries,
   selectedCommits,
   onSelectCommit,
@@ -58,14 +62,14 @@ export function Sidebar({
     <div className="flex flex-col h-full bg-surface-1 border-r border-border-default overflow-hidden">
       {/* Commit section (hidden in commit history mode) */}
       {!commitMode && (
-        <CommitSection hasChanges={uncommittedFiles.length > 0} onCommitted={onCommitted} />
+        <CommitSection hasChanges={uncommittedFiles.length > 0} onCommitted={onCommitted} ahead={ahead} onPushed={onPushed} />
       )}
 
       {/* Branch */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-border-default shrink-0">
         {branch && (
           <span
-            className="text-[10px] text-text-tertiary font-mono truncate"
+            className="text-[11px] text-text-tertiary font-mono truncate"
             title={branch}
           >
             {branch}
@@ -89,11 +93,11 @@ export function Sidebar({
                 `}
               >
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-text-primary uppercase tracking-wider">
+                  <span className="text-[13px] font-medium text-text-primary uppercase tracking-wider">
                     Uncommitted
                   </span>
                   {uncommittedFiles.length > 0 && (
-                    <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-surface-3 text-text-secondary text-[10px] font-medium">
+                    <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-surface-3 text-text-secondary text-[11px] font-medium">
                       {uncommittedFiles.length}
                     </span>
                   )}
@@ -101,7 +105,7 @@ export function Sidebar({
                 {isUncommittedView && files.length > 1 && (
                   <button
                     onClick={(e) => { e.stopPropagation(); onSelectAll(); }}
-                    className="text-[10px] text-text-tertiary hover:text-text-secondary transition-colors"
+                    className="text-[11px] text-text-tertiary hover:text-text-secondary transition-colors"
                   >
                     {allFilesSelected ? `${selectedFiles.size} selected` : "Select all"}
                   </button>
@@ -127,7 +131,7 @@ export function Sidebar({
                 </div>
               )}
               {isUncommittedView && uncommittedFiles.length === 0 && (
-                <div className="px-3 py-2 text-[11px] text-text-tertiary">
+                <div className="px-3 py-2 text-[12px] text-text-tertiary">
                   No uncommitted changes
                 </div>
               )}
@@ -136,11 +140,11 @@ export function Sidebar({
             {/* ── Commits ── */}
             <div>
               <div className="flex items-center gap-2 px-3 py-2 border-b border-border-default">
-                <span className="text-xs font-medium text-text-primary uppercase tracking-wider">
+                <span className="text-[13px] font-medium text-text-primary uppercase tracking-wider">
                   Commits
                 </span>
                 {selectedCommits.size > 1 && (
-                  <span className="text-[10px] text-text-tertiary">
+                  <span className="text-[11px] text-text-tertiary">
                     {selectedCommits.size} selected
                   </span>
                 )}
@@ -163,7 +167,7 @@ export function Sidebar({
                 {hasMoreLogs && (
                   <button
                     onClick={onLoadMoreLogs}
-                    className="w-full px-3 py-2 text-[11px] text-text-tertiary hover:text-text-secondary hover:bg-surface-2 transition-colors cursor-pointer"
+                    className="w-full px-3 py-2 text-[12px] text-text-tertiary hover:text-text-secondary hover:bg-surface-2 transition-colors cursor-pointer"
                   >
                     Show more...
                   </button>
@@ -175,17 +179,17 @@ export function Sidebar({
                 <div className="border-t border-border-default">
                   <div className="flex items-center justify-between px-3 py-2 border-b border-border-default">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-medium text-text-primary uppercase tracking-wider">
+                      <span className="text-[12px] font-medium text-text-primary uppercase tracking-wider">
                         Files
                       </span>
-                      <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-surface-3 text-text-secondary text-[10px] font-medium">
+                      <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-surface-3 text-text-secondary text-[11px] font-medium">
                         {files.length}
                       </span>
                     </div>
                     {files.length > 1 && (
                       <button
                         onClick={onSelectAll}
-                        className="text-[10px] text-text-tertiary hover:text-text-secondary transition-colors"
+                        className="text-[11px] text-text-tertiary hover:text-text-secondary transition-colors"
                       >
                         {allFilesSelected ? `${selectedFiles.size} selected` : "Select all"}
                       </button>
