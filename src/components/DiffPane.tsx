@@ -11,12 +11,20 @@ interface SelectedDiff {
   tokens?: { content: string; color?: string }[][] | null;
 }
 
+interface CommitInfo {
+  hash: string;
+  message: string;
+  date: string;
+}
+
 interface Props {
   selectedDiffs: SelectedDiff[];
   activeFile: string | null;
   loading: boolean;
   noChanges: boolean;
   onExpandContext?: (filePath: string) => void;
+  emptyMessage?: string;
+  commitInfo?: CommitInfo | null;
 }
 
 const statusLabel: Record<string, string> = {
@@ -128,13 +136,15 @@ export function DiffPane({
   loading,
   noChanges,
   onExpandContext,
+  emptyMessage,
+  commitInfo,
 }: Props) {
   if (noChanges) {
     return <EmptyState message="No changes" />;
   }
 
   if (selectedDiffs.length === 0) {
-    return <EmptyState message="Select a file to view changes" />;
+    return <EmptyState message={emptyMessage || "Select a file to view changes"} />;
   }
 
   if (loading && selectedDiffs.every((d) => d.diff === undefined)) {
@@ -143,6 +153,23 @@ export function DiffPane({
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      {/* Commit info header */}
+      {commitInfo && (
+        <div className="px-4 py-2.5 bg-surface-2 border-b border-border-default shrink-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-mono text-[11px] text-text-tertiary">
+              {commitInfo.hash.slice(0, 7)}
+            </span>
+            <span className="text-[11px] text-text-tertiary">
+              {commitInfo.date}
+            </span>
+          </div>
+          <div className="text-xs text-text-primary whitespace-pre-wrap">
+            {commitInfo.message}
+          </div>
+        </div>
+      )}
+
       {/* Multi-file indicator */}
       {selectedDiffs.length > 1 && (
         <div className="flex items-center px-4 py-1.5 bg-surface-2 border-b border-border-default text-[11px] text-text-secondary shrink-0">

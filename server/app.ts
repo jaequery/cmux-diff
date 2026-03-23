@@ -209,6 +209,12 @@ export async function createApp(options: AppOptions) {
         return Response.json(response, { headers });
       }
 
+      if (pathname === "/api/log") {
+        const count = parseInt(url.searchParams.get("count") || "50", 10);
+        const entries = await git.getLogEntries(count);
+        return Response.json({ entries }, { headers });
+      }
+
       if (pathname === "/api/branches") {
         const branches = await git.getBranches();
         return Response.json(branches, { headers });

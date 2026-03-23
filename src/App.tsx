@@ -1,26 +1,48 @@
 import { useState, useCallback, useEffect } from "react";
 import { Sidebar } from "./components/Sidebar";
+import { LogSidebar } from "./components/LogSidebar";
 import { DiffPane } from "./components/DiffPane";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { useDiff } from "./hooks/useDiff";
+import { useLogMode } from "./hooks/useLogMode";
 
-export function App() {
-  const {
-    files,
-    selectedFiles,
-    activeFile,
-    toggleFile,
-    selectRange,
-    navigateFile,
-    selectAll,
-    selectedDiffs,
-    loading,
-    diffLoading,
-    branch,
-    expandContext,
-    refresh,
-    commitMode,
-  } = useDiff();
+const isLogMode =
+  new URLSearchParams(window.location.search).get("mode") === "log";
+
+function AppContent() {
+  const diff = useDiff();
+  const log = useLogMode();
+
+  // Use log mode state when in log mode, otherwise use diff state
+  const state = isLogMode
+    ? {
+        files: log.files,
+        selectedFiles: log.selectedFiles,
+        activeFile: log.activeFile,
+        toggleFile: log.toggleFile,
+        selectRange: log.selectRange,
+        navigateFile: log.navigateFile,
+        selectAll: log.selectAll,
+        selectedDiffs: log.selectedDiffs,
+        loading: log.loading,
+        diffLoading: log.diffLoading,
+        branch: log.branch,
+        expandContext: log.expandContext,
+      }
+    : {
+        files: diff.files,
+        selectedFiles: diff.selectedFiles,
+        activeFile: diff.activeFile,
+        toggleFile: diff.toggleFile,
+        selectRange: diff.selectRange,
+        navigateFile: diff.navigateFile,
+        selectAll: diff.selectAll,
+        selectedDiffs: diff.selectedDiffs,
+        loading: diff.loading,
+        diffLoading: diff.diffLoading,
+        branch: diff.branch,
+        expandContext: diff.expandContext,
+      };
 
   useWebSocket();
 
@@ -67,21 +89,22 @@ export function App() {
 
       if (e.key === "ArrowUp" || e.key === "k") {
         e.preventDefault();
-        const idx = files.findIndex((f) => f.path === activeFile);
-        if (idx > 0) navigateFile(files[idx - 1].path);
+        const idx = state.files.findIndex((f) => f.path === state.activeFile);
+        if (idx > 0) state.navigateFile(state.files[idx - 1].path);
       } else if (e.key === "ArrowDown" || e.key === "j") {
         e.preventDefault();
-        const idx = files.findIndex((f) => f.path === activeFile);
-        if (idx < files.length - 1) navigateFile(files[idx + 1].path);
+        const idx = state.files.findIndex((f) => f.path === state.activeFile);
+        if (idx < state.files.length - 1)
+          state.navigateFile(state.files[idx + 1].path);
       } else if ((e.metaKey || e.ctrlKey) && e.key === "a") {
         e.preventDefault();
-        selectAll();
+        state.selectAll();
       }
     };
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [files, activeFile, navigateFile, selectAll]);
+  }, [state.files, state.activeFile, state.navigateFile, state.selectAll]);
 
   return (
     <div
@@ -89,18 +112,34 @@ export function App() {
     >
       {/* Sidebar */}
       <div style={{ width: sidebarWidth }} className="shrink-0">
-        <Sidebar
-          files={files}
-          selectedFiles={selectedFiles}
-          activeFile={activeFile}
-          onToggleFile={toggleFile}
-          onSelectRange={selectRange}
-          onSelectAll={selectAll}
-          onCommitted={refresh}
-          branch={branch}
-          loading={loading}
-          commitMode={commitMode}
-        />
+        {isLogMode ? (
+          <LogSidebar
+            entries={log.entries}
+            selectedCommit={log.selectedCommit}
+            onSelectCommit={log.selectCommit}
+            files={state.files}
+            selectedFiles={state.selectedFiles}
+            activeFile={state.activeFile}
+            onToggleFile={state.toggleFile}
+            onSelectRange={state.selectRange}
+            onSelectAll={state.selectAll}
+            branch={state.branch}
+            loading={state.loading}
+          />
+        ) : (
+          <Sidebar
+            files={state.files}
+            selectedFiles={state.selectedFiles}
+            activeFile={state.activeFile}
+            onToggleFile={state.toggleFile}
+            onSelectRange={state.selectRange}
+            onSelectAll={state.selectAll}
+            onCommitted={diff.refresh}
+            branch={state.branch}
+            loading={state.loading}
+            commitMode={diff.commitMode}
+          />
+        )}
       </div>
 
       {/* Resize handle */}
@@ -112,13 +151,31 @@ export function App() {
       {/* Diff pane */}
       <div className="flex-1 min-w-0">
         <DiffPane
-          selectedDiffs={selectedDiffs}
-          activeFile={activeFile}
-          loading={diffLoading}
-          noChanges={!loading && files.length === 0}
-          onExpandContext={expandContext}
+          selectedDiffs={state.selectedDiffs}
+          activeFile={state.activeFile}
+          loading={state.diffLoading}
+          noChanges={
+            isLogMode
+              ? !state.loading && log.selectedCommit !== null && state.files.length === 0
+              : !state.loading && state.files.length === 0
+          }
+          onExpandContext={state.expandContext}
+          emptyMessage={
+            isLogMode && !log.selectedCommit
+              ? "Select a commit to view changes"
+              : undefined
+          }
+          commitInfo={
+            isLogMode && log.selectedCommit
+              ? log.entries.find((e) => e.hash === log.selectedCommit) || null
+              : null
+          }
         />
       </div>
     </div>
   );
+}
+
+export function App() {
+  return <AppContent />;
 }

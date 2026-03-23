@@ -201,11 +201,14 @@ export function useDiff() {
     }
   }, [files, fileDiffs, fetchMultipleDiffs]);
 
-  // Initial load
+  const isLogMode = new URLSearchParams(window.location.search).get("mode") === "log";
+
+  // Initial load (skip in log mode)
   useEffect(() => {
+    if (isLogMode) return;
     fetchFiles();
     fetchStatus();
-  }, [fetchFiles, fetchStatus]);
+  }, [fetchFiles, fetchStatus, isLogMode]);
 
   // Fetch diff when active file changes and we don't have it cached
   useEffect(() => {
