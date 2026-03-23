@@ -2,7 +2,7 @@
 
 A Cursor / VSCode style Changes panel for the [cmux](https://cmux.dev) terminal environment. See which files changed, click to view syntax-highlighted diffs, including ability to generate AI-generated commit messages.
 
-<img width="1512" height="1038" alt="image" src="https://github.com/user-attachments/assets/cf695b8a-8ad0-4035-9034-7af775cb77b4" />
+[![Watch the video](https://img.youtube.com/vi/2E8wjJAIme0/maxresdefault.jpg)](https://youtu.be/2E8wjJAIme0)
 
 ## Install
 
