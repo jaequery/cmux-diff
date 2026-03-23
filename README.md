@@ -13,6 +13,13 @@ cmux-diff
 
 Requires [Bun](https://bun.sh) runtime.
 
+## Run
+
+```bash
+cd your_project
+cmux-diff
+```
+
 ## Features
 
 - **File sidebar** — all changed files with status badges (Added, Modified, Deleted, Renamed, Untracked)
