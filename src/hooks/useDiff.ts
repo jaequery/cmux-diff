@@ -48,12 +48,12 @@ export function useDiff() {
       setFiles(data.files);
       setError(null);
 
-      // Auto-select first file on initial load
+      // Auto-select all files on initial load
       if (!initialFetchDone.current && data.files.length > 0) {
         initialFetchDone.current = true;
-        const first = data.files[0].path;
-        setSelectedFiles(new Set([first]));
-        setActiveFile(first);
+        const allPaths = data.files.map((f) => f.path);
+        setSelectedFiles(new Set(allPaths));
+        setActiveFile(allPaths[0]);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to fetch files");
@@ -126,29 +126,17 @@ export function useDiff() {
 
   const lastClickedRef = useRef<string | null>(null);
 
-  // Toggle a file in/out of selection (plain click)
+  // Select only this file (plain click — deselects all others)
   const toggleFile = useCallback(
     (path: string) => {
       lastClickedRef.current = path;
-      setSelectedFiles((prev) => {
-        const next = new Set(prev);
-        if (next.has(path)) {
-          next.delete(path);
-          if (path === activeFile) {
-            const remaining = Array.from(next);
-            setActiveFile(remaining[remaining.length - 1] || null);
-          }
-        } else {
-          next.add(path);
-          setActiveFile(path);
-          if (!fileDiffs.has(path)) {
-            fetchFileDiff(path);
-          }
-        }
-        return next;
-      });
+      setSelectedFiles(new Set([path]));
+      setActiveFile(path);
+      if (!fileDiffs.has(path)) {
+        fetchFileDiff(path);
+      }
     },
-    [activeFile, fileDiffs, fetchFileDiff]
+    [fileDiffs, fetchFileDiff]
   );
 
   // Select a range of files (shift+click)
