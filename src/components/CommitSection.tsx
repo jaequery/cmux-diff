@@ -84,41 +84,42 @@ export function CommitSection({ hasChanges, onCommitted, ahead, onPushed }: Prop
   if (!hasChanges && !success && ahead === 0) return null;
 
   return (
-    <div className="border-b border-border-default px-3 py-2.5">
-      {/* Generate button */}
-      <button
-        onClick={generateMessage}
-        disabled={generating || !hasChanges}
-        className="w-full mb-2 bg-surface-3 hover:bg-surface-2 border border-border-default hover:border-border-accent/50 disabled:opacity-40 disabled:cursor-not-allowed text-text-primary text-xs font-medium py-1.5 px-2 rounded-sm transition-colors flex items-center justify-center gap-1.5"
-      >
-        <span className="text-sm">{generating ? "\u23F3" : "\u2728"}</span>
-        {generating ? "Analyzing changes..." : "Generate Commit Message"}
-      </button>
+    <div className="border border-border-default rounded-md px-3 py-2.5">
+      {/* Commit UI — only when there are uncommitted changes */}
+      {hasChanges && (
+        <>
+          <textarea
+            value={message}
+            onChange={(e) => {
+              setMessage(e.target.value);
+              setError(null);
+            }}
+            onKeyDown={handleKeyDown}
+            placeholder="Commit message..."
+            rows={message.includes("\n") ? Math.min(message.split("\n").length + 1, 8) : 2}
+            style={{ padding: '10px 12px' }}
+            className="w-full bg-surface-2 border border-border-default rounded-sm text-xs text-text-primary placeholder:text-text-tertiary font-mono resize-vertical focus:outline-none focus:border-border-accent"
+          />
 
-      {/* Input */}
-      <textarea
-        value={message}
-        onChange={(e) => {
-          setMessage(e.target.value);
-          setError(null);
-        }}
-        onKeyDown={handleKeyDown}
-        placeholder="Commit message..."
-        rows={message.includes("\n") ? Math.min(message.split("\n").length + 1, 8) : 2}
-        className="w-full bg-surface-2 border border-border-default rounded-sm px-2.5 py-1.5 text-xs text-text-primary placeholder:text-text-tertiary font-mono resize-vertical focus:outline-none focus:border-border-accent"
-      />
-
-      {/* Commit button */}
-      <div className="flex items-center gap-1.5 mt-1.5">
-        <button
-          onClick={handleCommit}
-          disabled={!message.trim() || committing}
-          className="flex-1 bg-border-accent hover:bg-border-accent/80 disabled:opacity-40 disabled:cursor-not-allowed text-surface-0 text-xs font-medium py-1.5 px-2 rounded-sm transition-colors"
-        >
-          {committing ? "Committing..." : "Commit"}
-        </button>
-        <span className="text-[10px] text-text-tertiary">{"\u2318"}Enter</span>
-      </div>
+          <div className="flex items-center gap-1.5 mt-1.5">
+            <button
+              onClick={handleCommit}
+              disabled={!message.trim() || committing}
+              className="flex-1 h-8 bg-border-accent hover:bg-border-accent/80 disabled:opacity-40 disabled:cursor-not-allowed text-surface-0 text-xs font-medium px-2 rounded-sm transition-colors"
+            >
+              {committing ? "Committing..." : "Commit"}
+            </button>
+            <button
+              onClick={generateMessage}
+              disabled={generating}
+              title="Generate commit message with AI"
+              className="shrink-0 w-8 h-8 flex items-center justify-center bg-surface-3 hover:bg-surface-2 border border-border-default hover:border-border-accent/50 disabled:opacity-40 disabled:cursor-not-allowed rounded-sm transition-colors"
+            >
+              <span className="text-sm">{generating ? "\u23F3" : "\u2728"}</span>
+            </button>
+          </div>
+        </>
+      )}
 
       {/* Push button */}
       {ahead > 0 && (

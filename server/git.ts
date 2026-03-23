@@ -2,6 +2,8 @@ export interface ChangedFile {
   path: string;
   oldPath?: string;
   status: "added" | "modified" | "deleted" | "renamed" | "copied" | "untracked";
+  additions?: number;
+  deletions?: number;
 }
 
 export interface LogEntry {
@@ -111,6 +113,33 @@ export class Git {
       if (parsed) files.push(parsed);
     }
 
+    // Get line stats
+    const numstatArgs = ["diff", "--numstat", "--no-color"];
+    if (base && target) {
+      numstatArgs.push(base, target);
+    } else if (base) {
+      numstatArgs.push(base);
+    }
+    try {
+      const numstat = await this.run(numstatArgs);
+      for (const line of numstat.trim().split("\n")) {
+        if (!line) continue;
+        const parts = line.split("\t");
+        if (parts.length >= 3) {
+          const add = parts[0] === "-" ? 0 : parseInt(parts[0], 10);
+          const del = parts[1] === "-" ? 0 : parseInt(parts[1], 10);
+          const filePath = parts[2];
+          const file = files.find((f) => f.path === filePath);
+          if (file) {
+            file.additions = add;
+            file.deletions = del;
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+
     // Get staged changes
     if (!base && !target) {
       const staged = await this.run([
@@ -119,10 +148,32 @@ export class Git {
         "--name-status",
         "--no-color",
       ]);
+      const stagedNumstat = await this.run([
+        "diff",
+        "--cached",
+        "--numstat",
+        "--no-color",
+      ]).catch(() => "");
+      const stagedStats = new Map<string, { add: number; del: number }>();
+      for (const line of stagedNumstat.trim().split("\n")) {
+        if (!line) continue;
+        const parts = line.split("\t");
+        if (parts.length >= 3) {
+          stagedStats.set(parts[2], {
+            add: parts[0] === "-" ? 0 : parseInt(parts[0], 10),
+            del: parts[1] === "-" ? 0 : parseInt(parts[1], 10),
+          });
+        }
+      }
       for (const line of staged.trim().split("\n")) {
         if (!line) continue;
         const parsed = this.parseNameStatus(line);
         if (parsed && !files.some((f) => f.path === parsed.path)) {
+          const stats = stagedStats.get(parsed.path);
+          if (stats) {
+            parsed.additions = stats.add;
+            parsed.deletions = stats.del;
+          }
           files.push(parsed);
         }
       }
@@ -136,9 +187,14 @@ export class Git {
           "--others",
           "--exclude-standard",
         ]);
-        for (const path of untracked.trim().split("\n")) {
-          if (path && !files.some((f) => f.path === path)) {
-            files.push({ path, status: "untracked" });
+        for (const filePath of untracked.trim().split("\n")) {
+          if (filePath && !files.some((f) => f.path === filePath)) {
+            let additions = 0;
+            try {
+              const content = await this.getUntrackedFileContent(filePath);
+              additions = content.split("\n").length;
+            } catch { /* ignore */ }
+            files.push({ path: filePath, status: "untracked", additions, deletions: 0 });
           }
         }
       } catch {

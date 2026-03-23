@@ -20,6 +20,7 @@ export function CommitItem({ entry, selected, onClick }: Props) {
         }
       `}
     >
+      <span className="text-[13px] break-words text-text-primary">{entry.message}</span>
       <div className="flex items-center gap-2">
         <span className="font-mono text-[11px] text-text-tertiary shrink-0">
           {entry.hash.slice(0, 7)}
@@ -28,7 +29,6 @@ export function CommitItem({ entry, selected, onClick }: Props) {
           {entry.date}
         </span>
       </div>
-      <span className="text-[13px] break-words">{entry.message}</span>
     </button>
   );
 }

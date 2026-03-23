@@ -59,14 +59,14 @@ export function Sidebar({
   const isUncommittedView = viewMode === "uncommitted";
 
   return (
-    <div className="flex flex-col h-full bg-surface-1 border-r border-border-default overflow-hidden">
+    <div className="flex flex-col h-full bg-surface-1 border-r border-border-default overflow-hidden" style={{ padding: 8, gap: 6 }}>
       {/* Commit section (hidden in commit history mode) */}
       {!commitMode && (
         <CommitSection hasChanges={uncommittedFiles.length > 0} onCommitted={onCommitted} ahead={ahead} onPushed={onPushed} />
       )}
 
       {/* Branch */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-border-default shrink-0">
+      <div className="flex items-center justify-between px-3 py-1.5 border border-border-default rounded-md shrink-0">
         {branch && (
           <span
             className="text-[11px] text-text-tertiary font-mono truncate"
@@ -77,7 +77,7 @@ export function Sidebar({
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto border border-border-default rounded-md">
         {loading ? (
           <div className="px-3 py-4 text-xs text-text-tertiary">Loading...</div>
         ) : (

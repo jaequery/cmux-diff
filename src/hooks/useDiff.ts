@@ -8,6 +8,8 @@ export interface ChangedFile {
   path: string;
   oldPath?: string;
   status: string;
+  additions?: number;
+  deletions?: number;
 }
 
 export interface LogEntry {

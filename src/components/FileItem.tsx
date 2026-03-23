@@ -58,10 +58,19 @@ export function FileItem({ file, selected, active, onClick }: Props) {
       </span>
 
       {/* File path */}
-      <span className="break-all font-mono text-[13px]">
+      <span className="break-all font-mono text-[13px] flex-1 min-w-0">
         {dir && <span className="text-text-tertiary">{dir}/</span>}
         <span>{fileName}</span>
       </span>
+
+      {/* Line stats */}
+      {(file.additions || file.deletions) ? (
+        <span className="shrink-0 font-mono" style={{ fontSize: 11 }}>
+          {file.additions ? <span className="text-status-added">+{file.additions}</span> : null}
+          {file.additions && file.deletions ? <span className="text-text-tertiary"> </span> : null}
+          {file.deletions ? <span className="text-status-deleted">-{file.deletions}</span> : null}
+        </span>
+      ) : null}
     </button>
   );
 }
