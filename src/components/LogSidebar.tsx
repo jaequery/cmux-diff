@@ -15,6 +15,8 @@ interface Props {
   onSelectAll: () => void;
   branch: string;
   loading: boolean;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 export function LogSidebar({
@@ -29,6 +31,8 @@ export function LogSidebar({
   onSelectAll,
   branch,
   loading,
+  hasMore,
+  onLoadMore,
 }: Props) {
   const allSelected = files.length > 0 && selectedFiles.size === files.length;
 
@@ -74,6 +78,14 @@ export function LogSidebar({
                   onClick={() => onSelectCommit(entry.hash)}
                 />
               ))}
+              {hasMore && onLoadMore && (
+                <button
+                  onClick={onLoadMore}
+                  className="w-full px-3 py-2 text-[11px] text-text-tertiary hover:text-text-secondary hover:bg-surface-2 transition-colors cursor-pointer"
+                >
+                  Show more...
+                </button>
+              )}
             </div>
 
             {/* Files for selected commit */}

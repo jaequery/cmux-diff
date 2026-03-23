@@ -34,18 +34,27 @@ export function useLogMode() {
   const [loading, setLoading] = useState(true);
   const [diffLoading, setDiffLoading] = useState(false);
   const [branch, setBranch] = useState("");
+  const [logCount, setLogCount] = useState(5);
+  const [hasMore, setHasMore] = useState(true);
   const lastClickedRef = useRef<string | null>(null);
 
-  const fetchLog = useCallback(async () => {
+  const fetchLog = useCallback(async (count = 5) => {
     try {
-      const data = await apiFetch<{ entries: LogEntry[] }>("/api/log");
+      const data = await apiFetch<{ entries: LogEntry[] }>("/api/log", { count: String(count) });
       setEntries(data.entries);
+      setHasMore(data.entries.length >= count);
     } catch {
       // ignore
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const loadMore = useCallback(() => {
+    const newCount = logCount + 5;
+    setLogCount(newCount);
+    fetchLog(newCount);
+  }, [logCount, fetchLog]);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -191,9 +200,10 @@ export function useLogMode() {
 
   useEffect(() => {
     if (!isLogMode) return;
-    fetchLog();
+    fetchLog(logCount);
     fetchStatus();
-  }, [fetchLog, fetchStatus, isLogMode]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchStatus, isLogMode]);
 
   const selectedDiffs = Array.from(selectedFiles)
     .sort((a, b) => {
@@ -223,5 +233,7 @@ export function useLogMode() {
     diffLoading,
     branch,
     expandContext,
+    loadMore,
+    hasMore,
   };
 }

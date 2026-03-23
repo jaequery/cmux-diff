@@ -125,6 +125,8 @@ function AppContent() {
             onSelectAll={state.selectAll}
             branch={state.branch}
             loading={state.loading}
+            hasMore={log.hasMore}
+            onLoadMore={log.loadMore}
           />
         ) : (
           <Sidebar

@@ -58,7 +58,7 @@ export function FileItem({ file, selected, active, onClick }: Props) {
       </span>
 
       {/* File path */}
-      <span className="truncate font-mono text-xs">
+      <span className="break-all font-mono text-xs">
         {dir && <span className="text-text-tertiary">{dir}/</span>}
         <span>{fileName}</span>
       </span>

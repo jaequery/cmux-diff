@@ -28,7 +28,7 @@ export function CommitItem({ entry, selected, onClick }: Props) {
           {entry.date}
         </span>
       </div>
-      <span className="text-xs truncate">{entry.message}</span>
+      <span className="text-xs break-words">{entry.message}</span>
     </button>
   );
 }
