@@ -1,4 +1,4 @@
-import type { LogEntry } from "../hooks/useLogMode";
+import type { LogEntry } from "../hooks/useDiff";
 
 interface Props {
   entry: LogEntry;

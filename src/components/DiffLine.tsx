@@ -50,7 +50,7 @@ export function DiffLine({ line, tokens }: Props) {
         {prefix}
       </span>
       {/* Content */}
-      <span className="flex-1 whitespace-pre pr-4">
+      <span className="flex-1 whitespace-pre-wrap break-all pr-4">
         {tokens ? (
           tokens.map((token, i) => (
             <span key={i} style={token.color ? { color: token.color } : undefined}>
