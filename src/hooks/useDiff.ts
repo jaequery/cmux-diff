@@ -42,9 +42,14 @@ export function useDiff() {
   const [error, setError] = useState<string | null>(null);
   const initialFetchDone = useRef(false);
 
+  // Read commits param from URL (e.g., ?commits=2)
+  const commits = new URLSearchParams(window.location.search).get("commits") || undefined;
+
   const fetchFiles = useCallback(async () => {
     try {
-      const data = await apiFetch<{ files: ChangedFile[] }>("/api/diff/files");
+      const params: Record<string, string> = {};
+      if (commits) params.commits = commits;
+      const data = await apiFetch<{ files: ChangedFile[] }>("/api/diff/files", params);
       setFiles(data.files);
       setError(null);
 
@@ -66,10 +71,12 @@ export function useDiff() {
     async (filePath: string, context = 3) => {
       setDiffLoading(true);
       try {
-        const data = await apiFetch<FileDiffResponse>("/api/diff/file", {
+        const params: Record<string, string> = {
           path: filePath,
           context: String(context),
-        });
+        };
+        if (commits) params.commits = commits;
+        const data = await apiFetch<FileDiffResponse>("/api/diff/file", params);
         let diff: DiffFile | null = null;
         if (data.diff) {
           const parsed = parseDiff(data.diff);
@@ -260,5 +267,6 @@ export function useDiff() {
     error,
     expandContext,
     refresh: fetchFiles,
+    commitMode: !!commits,
   };
 }

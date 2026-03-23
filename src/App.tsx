@@ -19,6 +19,7 @@ export function App() {
     branch,
     expandContext,
     refresh,
+    commitMode,
   } = useDiff();
 
   useWebSocket();
@@ -98,6 +99,7 @@ export function App() {
           onCommitted={refresh}
           branch={branch}
           loading={loading}
+          commitMode={commitMode}
         />
       </div>
 

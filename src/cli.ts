@@ -42,6 +42,7 @@ async function main() {
   let targetDir: string | undefined;
   let dryRun = false;
   let direction: Direction = "tab";
+  let commits: number | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -72,10 +73,14 @@ Options:
   -h, --help             Show this help
 
 Examples:
-  cmux-diff              Open as new tab (default)
+  cmux-diff              Show working tree changes (default)
+  cmux-diff 1            Show diff from the last commit
+  cmux-diff 3            Show diff from the last 3 commits
   cmux-diff -d bottom    Open as bottom split
   cmux-diff -d right     Open as right split`);
       process.exit(0);
+    } else if (!arg.startsWith("-") && /^\d+$/.test(arg)) {
+      commits = parseInt(arg, 10);
     } else if (!arg.startsWith("-")) {
       targetDir = arg;
     }
@@ -98,7 +103,10 @@ Examples:
   const cwd = path.resolve(targetDir || process.cwd());
 
   const app = await createApp({ cwd, port, dryRun });
-  const serverUrl = `http://127.0.0.1:${app.server.port}`;
+  let serverUrl = `http://127.0.0.1:${app.server.port}`;
+  if (commits) {
+    serverUrl += `?commits=${commits}`;
+  }
 
   console.log(`cmux-diff running at ${serverUrl}`);
   console.log(`Watching: ${cwd}`);

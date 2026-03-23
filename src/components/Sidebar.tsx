@@ -12,6 +12,7 @@ interface Props {
   onCommitted: () => void;
   branch: string;
   loading: boolean;
+  commitMode?: boolean;
 }
 
 export function Sidebar({
@@ -24,13 +25,16 @@ export function Sidebar({
   onCommitted,
   branch,
   loading,
+  commitMode,
 }: Props) {
   const allSelected = files.length > 0 && selectedFiles.size === files.length;
 
   return (
     <div className="flex flex-col h-full bg-surface-1 border-r border-border-default overflow-hidden">
-      {/* Commit section */}
-      <CommitSection hasChanges={files.length > 0} onCommitted={onCommitted} />
+      {/* Commit section (hidden in commit history mode) */}
+      {!commitMode && (
+        <CommitSection hasChanges={files.length > 0} onCommitted={onCommitted} />
+      )}
 
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-border-default shrink-0">

@@ -91,10 +91,18 @@ export async function createApp(options: AppOptions) {
       if (pathname === "/api/diff/files") {
         const base = url.searchParams.get("base") || undefined;
         const target = url.searchParams.get("target") || undefined;
+        const commits = url.searchParams.get("commits");
 
         let effectiveBase = base;
         let effectiveTarget = target;
-        if (!base && !target) {
+
+        if (commits) {
+          const n = parseInt(commits, 10);
+          if (n > 0) {
+            effectiveBase = `HEAD~${n}`;
+            effectiveTarget = "HEAD";
+          }
+        } else if (!base && !target) {
           const range = await git.computeDiffRange();
           if (range) {
             effectiveBase = range.base;
@@ -104,7 +112,8 @@ export async function createApp(options: AppOptions) {
 
         const files = await git.getChangedFiles(effectiveBase, effectiveTarget);
 
-        if (effectiveBase && effectiveTarget) {
+        // Only merge working tree changes when not viewing specific commits
+        if (!commits && effectiveBase && effectiveTarget) {
           const workingFiles = await git.getChangedFiles();
           for (const wf of workingFiles) {
             if (!files.some((f) => f.path === wf.path)) {
@@ -128,11 +137,19 @@ export async function createApp(options: AppOptions) {
 
         const base = url.searchParams.get("base") || undefined;
         const target = url.searchParams.get("target") || undefined;
+        const commits = url.searchParams.get("commits");
         const context = parseInt(url.searchParams.get("context") || "3", 10);
 
         let effectiveBase = base;
         let effectiveTarget = target;
-        if (!base && !target) {
+
+        if (commits) {
+          const n = parseInt(commits, 10);
+          if (n > 0) {
+            effectiveBase = `HEAD~${n}`;
+            effectiveTarget = "HEAD";
+          }
+        } else if (!base && !target) {
           const range = await git.computeDiffRange();
           if (range) {
             effectiveBase = range.base;
