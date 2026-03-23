@@ -8,7 +8,6 @@ A Cursor / VSCode style Changes panel for the [cmux](https://cmux.dev) terminal 
 
 ```bash
 npm install -g cmux-diff
-cmux-diff
 ```
 
 Requires [Bun](https://bun.sh) runtime.
