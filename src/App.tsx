@@ -29,6 +29,9 @@ export function App() {
     ahead,
     expandContext,
     commitInfo,
+    diffSummary,
+    summaryLoading,
+    fetchDiffSummary,
     refresh,
     commitMode,
   } = useDiff();
@@ -140,6 +143,9 @@ export function App() {
           noChanges={!loading && files.length === 0 && viewMode === "uncommitted"}
           onExpandContext={expandContext}
           commitInfo={commitInfo}
+          diffSummary={diffSummary}
+          summaryLoading={summaryLoading}
+          onRequestSummary={() => fetchDiffSummary()}
         />
       </div>
     </div>

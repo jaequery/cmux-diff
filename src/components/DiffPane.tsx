@@ -3,6 +3,7 @@ import { DiffFile } from "./DiffFile";
 import { EmptyState } from "./EmptyState";
 import type { ChangedFile } from "../hooks/useDiff";
 import { useRef, useEffect } from "react";
+import { Sparkles, Loader2 } from "lucide-react";
 
 interface SelectedDiff {
   path: string;
@@ -25,6 +26,9 @@ interface Props {
   onExpandContext?: (filePath: string) => void;
   emptyMessage?: string;
   commitInfo?: CommitInfo | null;
+  diffSummary?: string | null;
+  summaryLoading?: boolean;
+  onRequestSummary?: () => void;
 }
 
 const statusLabel: Record<string, string> = {
@@ -138,6 +142,9 @@ export function DiffPane({
   onExpandContext,
   emptyMessage,
   commitInfo,
+  diffSummary,
+  summaryLoading,
+  onRequestSummary,
 }: Props) {
   if (noChanges) {
     return <EmptyState message="No changes" />;
@@ -167,6 +174,38 @@ export function DiffPane({
           <div className="text-xs text-text-primary whitespace-pre-wrap">
             {commitInfo.message}
           </div>
+        </div>
+      )}
+
+      {/* AI Summary */}
+      {selectedDiffs.length > 0 && (
+        <div className="px-4 py-2 bg-surface-1 border-b border-border-default shrink-0">
+          {diffSummary ? (
+            <div className="flex gap-2">
+              <Sparkles size={14} className="text-border-accent shrink-0 mt-0.5" />
+              <div className="text-xs text-text-secondary whitespace-pre-wrap leading-relaxed">
+                {diffSummary}
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={onRequestSummary}
+              disabled={summaryLoading}
+              className="flex items-center gap-1.5 text-[11px] text-text-tertiary hover:text-text-secondary transition-colors disabled:opacity-50"
+            >
+              {summaryLoading ? (
+                <>
+                  <Loader2 size={12} className="animate-spin" />
+                  Summarizing changes...
+                </>
+              ) : (
+                <>
+                  <Sparkles size={12} />
+                  Summarize changes with AI
+                </>
+              )}
+            </button>
+          )}
         </div>
       )}
 

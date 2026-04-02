@@ -221,6 +221,32 @@ export async function createApp(options: AppOptions) {
         return Response.json(branches, { headers });
       }
 
+      if (pathname === "/api/diff/summary") {
+        const base = url.searchParams.get("base") || undefined;
+        const target = url.searchParams.get("target") || undefined;
+        const commits = url.searchParams.get("commits");
+
+        let effectiveBase = base;
+        let effectiveTarget = target;
+
+        if (commits) {
+          const n = parseInt(commits, 10);
+          if (n > 0) {
+            effectiveBase = `HEAD~${n}`;
+            effectiveTarget = "HEAD";
+          }
+        } else if (!base && !target) {
+          const range = await git.computeDiffRange();
+          if (range) {
+            effectiveBase = range.base;
+            effectiveTarget = range.target;
+          }
+        }
+
+        const summary = await git.summarizeDiff(effectiveBase, effectiveTarget);
+        return Response.json({ summary }, { headers });
+      }
+
       if (pathname === "/api/commit/message") {
         const message = await git.generateCommitMessage();
         return Response.json({ message }, { headers });

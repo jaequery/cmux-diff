@@ -63,6 +63,8 @@ export function useDiff() {
   const [branch, setBranch] = useState("");
   const [ahead, setAhead] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [diffSummary, setDiffSummary] = useState<string | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const initialFetchDone = useRef(false);
   const lastClickedRef = useRef<string | null>(null);
   const diffRangeRef = useRef<{ base: string; target: string } | null>(null);
@@ -161,6 +163,27 @@ export function useDiff() {
     [commits]
   );
 
+  const fetchDiffSummary = useCallback(async () => {
+    setSummaryLoading(true);
+    setDiffSummary(null);
+    try {
+      const params: Record<string, string> = {};
+      const range = diffRangeRef.current;
+      if (range) {
+        params.base = range.base;
+        params.target = range.target;
+      } else if (commits) {
+        params.commits = commits;
+      }
+      const data = await apiFetch<{ summary: string }>("/api/diff/summary", params);
+      setDiffSummary(data.summary);
+    } catch {
+      setDiffSummary(null);
+    } finally {
+      setSummaryLoading(false);
+    }
+  }, [commits]);
+
   // ==================== View switching ====================
 
   const switchToUncommitted = useCallback(() => {
@@ -169,6 +192,7 @@ export function useDiff() {
     diffRangeRef.current = null;
     setFiles(uncommittedFiles);
     setFileDiffs(new Map());
+    setDiffSummary(null);
     // Select all uncommitted files
     const allPaths = uncommittedFiles.map((f) => f.path);
     setSelectedFiles(new Set(allPaths));
@@ -197,6 +221,7 @@ export function useDiff() {
       setFileDiffs(new Map());
       setSelectedFiles(new Set());
       setActiveFile(null);
+      setDiffSummary(null);
 
       try {
         const data = await apiFetch<{ files: ChangedFile[] }>("/api/diff/files", { base, target });
@@ -359,6 +384,7 @@ export function useDiff() {
         fetchStatus();
         if (viewMode === "uncommitted") {
           setFileDiffs(new Map());
+          setDiffSummary(null);
         }
       }
     };
@@ -436,6 +462,9 @@ export function useDiff() {
     error,
     expandContext,
     commitInfo,
+    diffSummary,
+    summaryLoading,
+    fetchDiffSummary,
     refresh: fetchUncommittedFiles,
     commitMode: !!commits,
   };

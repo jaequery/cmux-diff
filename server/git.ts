@@ -455,6 +455,81 @@ ${truncatedDiff}`;
     return `${type}${scope}: ${desc}`;
   }
 
+  async summarizeDiff(base?: string, target?: string): Promise<string> {
+    const files = await this.getChangedFiles(base, target);
+    if (files.length === 0) return "No changes to summarize.";
+
+    const diff = await this.getFullDiff(base, target);
+    if (!diff.trim()) return "No changes to summarize.";
+
+    const truncatedDiff =
+      diff.length > 8000 ? diff.slice(0, 8000) + "\n... (truncated)" : diff;
+
+    const fileList = files
+      .map((f) => {
+        const badge =
+          f.status === "added" || f.status === "untracked"
+            ? "A"
+            : f.status === "deleted"
+              ? "D"
+              : f.status === "renamed"
+                ? "R"
+                : "M";
+        const stats = [];
+        if (f.additions) stats.push(`+${f.additions}`);
+        if (f.deletions) stats.push(`-${f.deletions}`);
+        return `${badge} ${f.path}${stats.length ? ` (${stats.join(", ")})` : ""}`;
+      })
+      .join("\n");
+
+    const prompt = `Summarize the following code changes in 2-4 concise bullet points. Focus on WHAT changed and WHY it matters. Be specific about the functional impact. Do NOT list files — describe the changes semantically. Keep it brief, no markdown headers, just bullet points starting with •.
+
+Changed files:
+${fileList}
+
+Diff:
+${truncatedDiff}`;
+
+    try {
+      const claudePaths = [
+        `${process.env.HOME}/.local/bin/claude`,
+        "/usr/local/bin/claude",
+        "/Applications/cmux.app/Contents/Resources/bin/claude",
+      ];
+      let claudeBin: string | null = null;
+      for (const p of claudePaths) {
+        if (await Bun.file(p).exists()) {
+          claudeBin = p;
+          break;
+        }
+      }
+      if (!claudeBin) throw new Error("claude not found");
+
+      const proc = Bun.spawn([claudeBin, "-p", prompt], {
+        stdout: "pipe",
+        stderr: "pipe",
+        cwd: this.cwd,
+      });
+      const stdout = await new Response(proc.stdout).text();
+      const exitCode = await proc.exited;
+      if (exitCode === 0 && stdout.trim()) {
+        return stdout.trim();
+      }
+    } catch {
+      // fall through
+    }
+
+    // Fallback
+    const added = files.filter((f) => f.status === "added" || f.status === "untracked").length;
+    const modified = files.filter((f) => f.status === "modified").length;
+    const deleted = files.filter((f) => f.status === "deleted").length;
+    const parts = [];
+    if (added) parts.push(`${added} file${added > 1 ? "s" : ""} added`);
+    if (modified) parts.push(`${modified} file${modified > 1 ? "s" : ""} modified`);
+    if (deleted) parts.push(`${deleted} file${deleted > 1 ? "s" : ""} deleted`);
+    return parts.map((p) => `• ${p}`).join("\n");
+  }
+
   private parseNameStatus(line: string): ChangedFile | null {
     const parts = line.split("\t");
     if (parts.length < 2) return null;
