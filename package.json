@@ -2,6 +2,16 @@
   "name": "cmux-diff",
   "version": "0.2.11",
   "type": "module",
+  "files": [
+    "src/",
+    "server/",
+    "dist/",
+    "skills/",
+    "scripts/",
+    "build.ts",
+    "build-compile.ts",
+    "tsconfig.json"
+  ],
   "bin": {
     "cmux-diff": "src/cli.ts"
   },

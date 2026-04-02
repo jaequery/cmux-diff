@@ -19,23 +19,41 @@ interface DiffFileResponse {
   tokens?: { content: string; color?: string }[][];
 }
 
-const srcDir = path.join(import.meta.dir, "..", "src");
-const distDir = path.join(import.meta.dir, "..", ".dist");
+const distDir = path.join(import.meta.dir, "..", "dist");
+const devDistDir = path.join(import.meta.dir, "..", ".dist");
+
+function getServeDir(): string {
+  // Prefer pre-built dist/ (npm package), fall back to .dist/ (dev build)
+  if (Bun.file(path.join(distDir, "index.html")).size) return distDir;
+  return devDistDir;
+}
 
 async function buildFrontend(): Promise<boolean> {
-  const tailwind = (await import("bun-plugin-tailwind")).default;
-  const result = await Bun.build({
-    entrypoints: [path.join(srcDir, "index.html")],
-    outdir: distDir,
-    plugins: [tailwind],
-    target: "browser",
-    sourcemap: "linked",
-  });
-  if (!result.success) {
-    console.error("Frontend build failed:", result.logs);
+  // Skip if pre-built dist/ exists (installed from npm)
+  try {
+    if (await Bun.file(path.join(distDir, "index.html")).exists()) return true;
+  } catch {}
+
+  // Dev mode: build on the fly
+  try {
+    const tailwind = (await import("bun-plugin-tailwind")).default;
+    const srcDir = path.join(import.meta.dir, "..", "src");
+    const result = await Bun.build({
+      entrypoints: [path.join(srcDir, "index.html")],
+      outdir: devDistDir,
+      plugins: [tailwind],
+      target: "browser",
+      sourcemap: "linked",
+    });
+    if (!result.success) {
+      console.error("Frontend build failed:", result.logs);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("Frontend build unavailable (missing bun-plugin-tailwind). Run 'bun run build' first.");
     return false;
   }
-  return true;
 }
 
 export async function createApp(options: AppOptions) {
@@ -304,15 +322,16 @@ export async function createApp(options: AppOptions) {
       }
 
       // Serve built frontend files
+      const serveDir = getServeDir();
       const filePath =
         url.pathname === "/" ? "index.html" : url.pathname.slice(1);
-      const file = Bun.file(path.join(distDir, filePath));
+      const file = Bun.file(path.join(serveDir, filePath));
       if (await file.exists()) {
         return new Response(file);
       }
 
       // SPA fallback — serve index.html for any unmatched route
-      return new Response(Bun.file(path.join(distDir, "index.html")));
+      return new Response(Bun.file(path.join(serveDir, "index.html")));
     },
 
     websocket: {
