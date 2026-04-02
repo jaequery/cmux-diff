@@ -1,6 +1,6 @@
 {
   "name": "cmux-diff",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "type": "module",
   "bin": {
     "cmux-diff": "src/cli.ts"
