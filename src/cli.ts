@@ -60,6 +60,10 @@ async function main() {
       i++;
     } else if (arg === "--dry-run") {
       dryRun = true;
+    } else if (arg === "-v" || arg === "--version") {
+      const pkg = await import("../package.json");
+      console.log(pkg.version);
+      process.exit(0);
     } else if (arg === "-h" || arg === "--help") {
       console.log(`cmux-diff - Changes panel for cmux
 
@@ -70,6 +74,7 @@ Options:
                          tab, right, bottom, left, top
   -p, --port <port>      Port to listen on (default: random)
   --dry-run              Don't connect to cmux socket
+  -v, --version          Show version
   -h, --help             Show this help
 
 Examples:
